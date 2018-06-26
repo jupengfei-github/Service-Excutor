@@ -1,0 +1,3 @@
+/system/etc/sace_event.ini    u:object_r:system_file:s0
+/data/sace(/.*)?              u:object_r:sace_data_file:s0
+/system/bin/saced             u:object_r:sace_exec:s0

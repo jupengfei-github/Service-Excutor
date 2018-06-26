@@ -1,0 +1,3 @@
+base=/system
+export CLASSPATH=$base/framework/sace_test.jar:$base/framework/sace.jar
+exec app_process $base/bin com.android.test.Main "$@"

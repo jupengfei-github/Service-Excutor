@@ -86,13 +86,11 @@ sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceComm
         mCmd.command_params = cmd_param;
 
     mRlt = mSender->excuteCommand(mCmd);
-    sp<SaceCommandObj> cmdObj;
-
     if (mRlt.resultStatus == SACE_RESULT_STATUS_OK) {
         if (mRlt.resultType == SACE_RESULT_TYPE_FD) {
             uint64_t label;
             memcpy(&label, mRlt.resultExtra, mRlt.resultExtraLen);
-            cmdObj = new SaceCommandObj(mSender, label, cmd, mRlt.resultFd, in);
+            sp<SaceCommandObj> cmdObj = new SaceCommandObj(mSender, label, cmd, mRlt.resultFd, in);
 
             AutoMutex _lock(mMutex);
             mCommands.insert(pair<uint64_t, sp<SaceCommandObj>>(label, cmdObj));
@@ -103,7 +101,7 @@ sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceComm
     else
         SACE_LOGE("error runCommand %s", mCmd.to_string().c_str());
 
-    return cmdObj;
+    return nullptr;
 }
 
 sp<SaceServiceObj> SaceManager::queryService (const char* name) {
@@ -170,6 +168,7 @@ sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd,
 
             AutoMutex _lock(mMutex);
             mServices.insert(pair<uint64_t, sp<SaceServiceObj>>(label, sve));
+            return sve;
         }
         else
             SACE_LOGE("Invalid Result Data %s", mCmd.to_string().c_str());
@@ -177,7 +176,7 @@ sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd,
     else
         SACE_LOGE("error runCommand %s", mCmd.to_string().c_str());
 
-    return sve;
+    return nullptr;
 }
 
 int SaceManager::addEvent (const char* name, const char* cmd, shared_ptr<SaceEventParams> param) {
@@ -210,6 +209,19 @@ int SaceManager::deleteEvent (const char* name, bool __unused stop) {
     return mRlt.resultStatus == SACE_RESULT_STATUS_OK;
 }
 
+static enum ErrorCode status_to_error (SaceResponseStatus status) {
+    switch (status) {
+        case SACE_RESPONSE_STATUS_EXIT:
+        case SACE_RESPONSE_STATUS_SIGNAL:
+            return ERR_EXIT;
+        case SACE_RESPONSE_STATUS_USER:
+            return ERR_EXIT_USER;
+        case SACE_RESPONSE_STATUS_UNKNOWN:
+        default:
+            return ERR_UNKNOWN;
+    }
+}
+
 void SaceManager::onResponse (const SaceStatusResponse &response) {
     uint64_t label = response.label;
 
@@ -221,6 +233,8 @@ void SaceManager::onResponse (const SaceStatusResponse &response) {
         }
 
         sp<SaceServiceObj> sveObj = it->second;
+        sveObj->setError(status_to_error(response.status));
+
         mServices.erase(it);
         if (mCallback != nullptr) {
             ServiceResponse rsp;
@@ -241,6 +255,8 @@ void SaceManager::onResponse (const SaceStatusResponse &response) {
         }
 
         sp<SaceCommandObj> cmdObj = it->second;
+        cmdObj->setError(status_to_error(response.status));
+
         mCommands.erase(it);
         if (mCallback != nullptr) {
             CommandResponse rsp;

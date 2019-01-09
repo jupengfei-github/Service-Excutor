@@ -39,6 +39,7 @@ LOCAL_SRC_FILES :=        \
     SaceSender.cpp        \
 	SaceObj.cpp
 
+LOCAL_CPPFLAGS += -fexceptions
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_SHARED_LIBRARIES := liblog libcutils libutils libbinder
 LOCAL_STATIC_LIBRARIES := libsace

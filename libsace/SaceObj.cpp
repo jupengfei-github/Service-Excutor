@@ -21,39 +21,42 @@
 
 namespace android {
 
-int SaceCommandObj::read (char* buf, int len) {
-    if (!in) {
-        SACE_LOGE("unsupported read operation");
-        return 0;
-    }
+int SaceCommandObj::read (char* buf, int len) throw(UnsupportedOperation, RemoteException) {
+    if (!in)
+        throw UnsupportedOperation("only read support");
 
-    if (fd >= 0)
-        return ::read(fd, buf, len);
+    if (getError() == ERR_EXIT)
+        throw RemoteException(cmd + " Exit Abnormally");
 
-    SACE_LOGE("Invalid File Descriptor");
-    errno = EBADFD;
-    return -1;
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(cmd + " Has Exit By User");
+
+    return ::read(fd, buf, len);
 }
 
-int SaceCommandObj::write (char *buf, int len) {
-    if (in) {
-        SACE_LOGE("unsupported write operation");
-        return 0;
-    }
+int SaceCommandObj::write (char *buf, int len) throw(UnsupportedOperation, RemoteException) {
+    if (in)
+        throw UnsupportedOperation("only write support");
 
-    if (fd >= 0)
-        return ::write(fd, buf, len);
+    if (getError() == ERR_EXIT)
+        throw RemoteException(cmd + " Exit Abnormally");
 
-    SACE_LOGE("Invalid File Descriptor");
-    errno = EBADFD;
-    return -1;
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(cmd + " Has Exit By User");
+
+    return ::write(fd, buf, len);
 }
 
 void SaceCommandObj::close () {
-    if (fd < 0)
+    if (getError() == ERR_EXIT || getError() == ERR_EXIT_USER) {
+        SACE_LOGI("%s Has Closed", cmd.c_str());
         return;
+    }
 
-    ::close(fd);
+    if (fd >= 0) {
+        ::fsync(fd);
+        ::close(fd);
+    }
 
     SaceCommand command;
     command.label = label;
@@ -61,21 +64,20 @@ void SaceCommandObj::close () {
     command.normalCmdType = SACE_NORMAL_CMD_CLOSE;
     SaceResult result = excute(command);
 
-    if (result.resultStatus != SACE_RESULT_STATUS_OK)
+    if (result.resultStatus == SACE_RESULT_STATUS_OK)
+        setError(ERR_EXIT_USER);
+    else
         SACE_LOGE("close %s fail", cmd.c_str());
 }
 
-bool SaceCommandObj::isOk () {
-    return fstat(fd, NULL) >= 0;
-}
-
-void SaceCommandObj::flush () {
-    if (fd >= 0)
-        fsync(fd);
-}
-
 // -------------------------------------------------
-bool SaceServiceObj::stop () {
+bool SaceServiceObj::stop () throw(RemoteException) {
+    if (getError() == ERR_EXIT)
+        throw RemoteException(name + " Exit Abnormally");
+
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(name + " Has Exit By User");
+
     if (!label) {
         SACE_LOGE("Service %s not Exists", name.c_str());
         return false;
@@ -90,7 +92,13 @@ bool SaceServiceObj::stop () {
     return mRlt.resultStatus == SACE_RESULT_STATUS_OK;
 }
 
-bool SaceServiceObj::pause () {
+bool SaceServiceObj::pause () throw(RemoteException) {
+    if (getError() == ERR_EXIT)
+        throw RemoteException(name + " Exit Abnormally");
+
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(name + " Has Exit By User");
+
     if (!label) {
         SACE_LOGE("Service %s not Exists", name.c_str());
         return false;
@@ -105,7 +113,13 @@ bool SaceServiceObj::pause () {
     return mRlt.resultStatus == SACE_RESULT_STATUS_OK;
 }
 
-bool SaceServiceObj::restart () {
+bool SaceServiceObj::restart () throw(RemoteException) {
+    if (getError() == ERR_EXIT)
+        throw RemoteException(name + " Exit Abnormally");
+
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(name + " Has Exit By User");
+
     if (!label) {
         SACE_LOGE("Service %s not Exists", name.c_str());
         return false;
@@ -121,6 +135,12 @@ bool SaceServiceObj::restart () {
 }
 
 enum SaceServiceInfo::ServiceState SaceServiceObj::getState() {
+    if (getError() == ERR_EXIT)
+        throw RemoteException(name + " Exit Abnormally");
+
+    if (getError() == ERR_EXIT_USER)
+        throw InvalidOperation(name + " Has Exit By User");
+
     mCmd.init();
     mCmd.type  = SACE_TYPE_SERVICE;
     mCmd.label = label;

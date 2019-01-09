@@ -20,43 +20,65 @@
 #include <stdio.h>
 #include <string>
 #include <utils/RefBase.h>
+#include <utils/Mutex.h>
 
 #include "../../SaceSender.h"
 #include "../../SaceTypes.h"
 #include "../../SaceLog.h"
 #include "../../SaceServiceInfo.h"
+#include "SaceError.h"
 
 namespace android {
 
+enum ErrorCode {
+    ERR_OK,
+    ERR_TIMEOUT,
+    ERR_EXIT,
+    ERR_EXIT_USER,
+    ERR_UNKNOWN,
+};
+
 class SaceCmdObj : public RefBase {
     sp<SaceSender> mCmdSender;
+    enum ErrorCode mError;
+    Mutex error_mutex;
+
 public:
     SaceCmdObj (sp<SaceSender> obj) {
         mCmdSender = obj;
+        mError = ERR_OK;
+    }
+
+    enum ErrorCode getError () {
+        AutoMutex _lock(error_mutex);
+        return mError;
     }
 
 protected:
     SaceResult excute (SaceCommand &cmd) {
         return mCmdSender->excuteCommand(cmd);
     }
+
+    void setError (enum ErrorCode code) {
+        AutoMutex _lock(error_mutex);
+        mError = code;
+    }
 };
 
 // ----------------------------------------------
+class SaceManager;
 class SaceCommandObj : public SaceCmdObj {
     string cmd;
     uint64_t label;
     int fd;
     bool in;
-public:
-    SaceCommandObj ():SaceCmdObj(nullptr) {
-        fd    = -1;
-        label = 0;
-    }
 
+    friend class SaceManager;
+public:
     SaceCommandObj (sp<SaceSender> obj, uint64_t label, const char* cmd, int fd, bool in):SaceCmdObj(obj) {
         this->label = label;
         this->fd  = fd;
-        this->cmd = string(cmd);
+        this->cmd = cmd;
         this->in  = in;
     }
 
@@ -64,41 +86,44 @@ public:
         close();
     }
 
-    string getCmd() { return cmd; }
-    int read(char *buf, int len);
-    int write(char *buf, int len);
-    bool isOk();
+    string getCmd() { 
+        return cmd; 
+    }
+
+    int read (char *buf, int len) throw (UnsupportedOperation, RemoteException);
+    int write (char *buf, int len) throw (UnsupportedOperation, RemoteException);
     void close();
-    void flush();
 };
 
 // ----------------------------------------------
-class SaceManager;
+
 class SaceServiceObj : public SaceCmdObj {
     uint64_t label;
     string name;
     string command;
-	SaceCommand mCmd;
-	SaceResult  mRlt;
+    SaceCommand mCmd;
+    SaceResult  mRlt;
 
+    friend class SaceManager;
 public:
-    SaceServiceObj ():SaceCmdObj(nullptr) {
-        label = 0;
-        name  = string("unknown");
-        command = string("unknown");
-    }
-
     SaceServiceObj (sp<SaceSender> obj, uint64_t label, const char* name, const char* cmd):SaceCmdObj(obj) {
         this->label = label;
         this->name  = string(name);
         command = string(cmd);
     }
 
-    bool stop();
-    bool pause();
-    bool restart();
-    string getName() { return name; }
-    string getCmd() { return command; }
+    bool stop() throw (RemoteException);
+    bool pause() throw (RemoteException);
+    bool restart() throw (RemoteException);
+
+    string getName() {
+        return name;
+    }
+
+    string getCmd() {
+        return command;
+    }
+
     enum SaceServiceInfo::ServiceState getState();
 };
 

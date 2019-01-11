@@ -15,8 +15,8 @@
  */
 
 #include <jni.h>
-
 #include "sace/SaceManager.h"
+#include "sace_jni.h"
 
 using namespace android;
 
@@ -46,25 +46,33 @@ static shared_ptr<SaceCommandParams> nativeSaceParams (JNIEnv *env, jobject sace
     jclass cls = env->GetObjectClass(sace_params);
     shared_ptr<SaceCommandParams> param = make_shared<SaceCommandParams>();
 
-    jint version = env->GetIntField(cls, env->GetFieldID(cls, "version", "I"));
+    jint version = env->GetIntField(sace_params, env->GetFieldID(cls, "version", "I"));
     if (version > SACE_PARAM_VERSION_1_0)
         throwIllegalException(env, string("unknown versionCode=").append(::to_string(version)).append(" In SaceParams"));
 
-    jint uid = env->GetIntField(cls, env->GetFieldID(cls, "uid", "I"));
+    jint uid = env->GetIntField(sace_params, env->GetFieldID(cls, "uid", "I"));
     if (uid > 0)
         param->set_uid(static_cast<uid_t>(uid));
 
-    jintArray gids = static_cast<jintArray>(env->GetObjectField(cls, env->GetFieldID(cls, "gids", "[Ljava/lang/Integer")));
-    jsize length = env->GetArrayLength(gids);
-    jint* array_start = nullptr;
-    if (length > 0) {
-        array_start = env->GetIntArrayElements(gids, 0);
+    jobject obj = env->GetObjectField(sace_params, env->GetFieldID(cls, "gids", "Ljava/util/List;"));
+    if (obj == nullptr)
+        return param;
 
-        param->set_gid(static_cast<gid_t>(array_start[0]));
-        for (jint i = 1; i < length; i++)
-            param->add_gids(static_cast<gid_t>(array_start[i]));
+    jclass list_cls = env->GetObjectClass(obj);
+    jmethodID list_get  = env->GetMethodID(list_cls, "get", "(I)Ljava/lang/Integer;");
+    jmethodID list_size = env->GetMethodID(list_cls, "size", "()I");
 
-        env->ReleaseIntArrayElements(gids, array_start, 0);
+    jsize length = env->CallIntMethod(sace_params, list_size);
+    for (jint i = 0; i < length; i++) {
+        jobject obj_value = env->CallObjectMethod(sace_params, list_get, i);
+
+        jclass obj_cls = env->GetObjectClass(obj_value);
+        gid_t  gid = static_cast<gid_t>(env->CallIntMethod(obj_value, env->GetMethodID(obj_cls, "intValue", "(I)V")));
+
+        if (i <= 0)
+            param->set_gid(gid);
+        else
+            param->add_gids(gid);
     }
 
     return param;
@@ -77,7 +85,9 @@ JNIEXPORT jobject JNICALL Java_com_android_sace_SaceManager_nRunCommandExt (JNIE
 
     jclass jCommand = env->FindClass("com/android/sace/SaceCommand");
     jmethodID jCmdInit = env->GetMethodID(jCommand, "<init>", "(JZ)V");
-    jobject jCmdObj = env->NewObject(jCommand, jCmdInit, (jlong)command.get(), inout);
+
+    SaceCommandWrapper* wrapper = new SaceCommandWrapper(command);
+    jobject jCmdObj = env->NewObject(jCommand, jCmdInit, (jlong)wrapper, inout);
 
     return jCmdObj;
 }
@@ -104,7 +114,9 @@ JNIEXPORT jobject JNICALL Java_com_android_sace_SaceManager_nCheckService (JNIEn
 
     jclass jService = env->FindClass("com/android/sace/SaceService");
     jmethodID jServiceInit = env->GetMethodID(jService, "<init>", "(J)V");
-    jobject jServiceObj = env->NewObject(jService, jServiceInit, (jlong)service.get());
+
+    SaceServiceWrapper* wrapper = new SaceServiceWrapper(service);
+    jobject jServiceObj = env->NewObject(jService, jServiceInit, (jlong)wrapper);
 
     return jServiceObj;
 }

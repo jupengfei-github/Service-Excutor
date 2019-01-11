@@ -15,8 +15,8 @@
  */
 
 #include <jni.h>
-
 #include "sace/SaceObj.h"
+#include "sace_jni.h"
 
 using namespace android;
 
@@ -25,12 +25,12 @@ extern "C" {
 #endif
 
 JNIEXPORT void JNICALL Java_com_android_sace_SaceService_nDestroy (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
-    delete sve;
+    SaceServiceWrapper* wrapper = reinterpret_cast<SaceServiceWrapper*>(ptr);
+    delete wrapper;
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nStop (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
     bool ret = false;
 
     try {
@@ -47,7 +47,7 @@ JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nStop (JNIEnv *env __un
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nPause (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
     bool ret = false;
 
     try {
@@ -64,7 +64,7 @@ JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nPause (JNIEnv *env __u
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nRestart (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
     bool ret = false;
 
     try {
@@ -81,19 +81,19 @@ JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nRestart (JNIEnv *env _
 }
 
 JNIEXPORT jstring JNICALL Java_com_android_sace_SaceService_nGetName (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
 	string name = sve->getName();
 	return env->NewStringUTF(name.c_str());
 }
 
 JNIEXPORT jstring  JNICALL Java_com_android_sace_SaceService_nGetCmd (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
 	string cmd  = sve->getCmd();
     return env->NewStringUTF(cmd.c_str());
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nGetState (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
+    sp<SaceServiceObj> sve = reinterpret_cast<SaceServiceWrapper*>(ptr)->sve;
     jint state = SaceServiceInfo::SERVICE_UNKNOWN;
 
     try {

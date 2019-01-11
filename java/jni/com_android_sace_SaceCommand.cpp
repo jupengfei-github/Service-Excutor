@@ -17,6 +17,7 @@
 #include <jni.h>
 #include "sace/SaceObj.h"
 #include "sace/SaceError.h"
+#include "sace_jni.h"
 
 using namespace android;
 
@@ -42,13 +43,13 @@ public:
 };
 
 JNIEXPORT void JNICALL Java_com_android_sace_SaceCommand_nDestroy (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceCommandObj *cmd = reinterpret_cast<SaceCommandObj*>(ptr);
-    delete cmd;
+    SaceCommandWrapper *wrapper = reinterpret_cast<SaceCommandWrapper*>(ptr);
+    delete wrapper;
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceCommand_nRead (JNIEnv *env, jobject obj __unused, jlong ptr,
 		jbyteArray buf, jint off, jint len) {
-    SaceCommandObj *cmd = reinterpret_cast<SaceCommandObj*>(ptr);
+    sp<SaceCommandObj> cmd = reinterpret_cast<SaceCommandWrapper*>(ptr)->cmd;
     jint ret = -1;
 
     try {
@@ -72,7 +73,7 @@ JNIEXPORT jint JNICALL Java_com_android_sace_SaceCommand_nRead (JNIEnv *env, job
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceCommand_nWrite (JNIEnv *env, jobject obj __unused, jlong ptr,
 		jbyteArray buf, jint off, jint len) {
-    SaceCommandObj *cmd = reinterpret_cast<SaceCommandObj*>(ptr);
+    sp<SaceCommandObj> cmd = reinterpret_cast<SaceCommandWrapper*>(ptr)->cmd;
     jint ret = -1;
 
     try {
@@ -95,7 +96,7 @@ JNIEXPORT jint JNICALL Java_com_android_sace_SaceCommand_nWrite (JNIEnv *env, jo
 }
 
 JNIEXPORT void JNICALL Java_com_android_sace_SaceCommand_nClose (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
-    SaceCommandObj *cmd = reinterpret_cast<SaceCommandObj*>(ptr);
+    sp<SaceCommandObj> cmd = reinterpret_cast<SaceCommandWrapper*>(ptr)->cmd;
     cmd->close();
 }
 

@@ -143,10 +143,13 @@ sp<SaceServiceObj> SaceManager::queryEventService (const char* name) {
     return nullptr;
 }
 
-sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd, shared_ptr<SaceCommandParams> __unused param) {
+sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd, shared_ptr<SaceCommandParams> param) {
     sp<SaceServiceObj> sve;
-    if ((sve = queryService(name)).get() || (sve = queryEventService(name)).get())
+    if ((sve = queryService(name)).get() || (sve = queryEventService(name)).get()) {
+        AutoMutex _lock(mMutex);
+        mServices.insert(pair<uint64_t, sp<SaceServiceObj>>(sve->label, sve));
         return sve;
+    }
 
     if (!cmd)
         return nullptr;

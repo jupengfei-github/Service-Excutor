@@ -202,9 +202,13 @@ void* SaceEvent::event_monitor_thread (void *obj) {
 
     while (self->running.load()) {
         map<string, shared_ptr<Service>> cmds;
+        set<string> restart;
 
         self->event_mutex.lock();
         cmds.insert(self->events.begin(), self->events.end());
+
+        restart.insert(self->failed_events.begin(), self->failed_events.end());
+        self->failed_events.clear();
         self->event_mutex.unlock();
 
         /* Start Trigger Service */
@@ -214,18 +218,11 @@ void* SaceEvent::event_monitor_thread (void *obj) {
         }
 
         /* Restart Failed Event */
-        vector<shared_ptr<Service>> restart_service;
-        self->event_mutex.lock();
-        for (auto eventName : self->failed_events) {
-            map<string, shared_ptr<Service>>::iterator it = self->events.find(eventName);
-            if (it != self->events.end())
-                restart_service.push_back(it->second);
+        for (auto eventName : restart) {
+            map<string, shared_ptr<Service>>::iterator it = cmds.find(eventName);
+            if (it != cmds.end())
+                self->start_event(it->second);
         }
-        self->failed_events.clear();
-        self->event_mutex.unlock();
-
-        for (shared_ptr<Service> sve : restart_service)
-            self->start_event(sve);
 
         /* Exception Occur */
         FD_ZERO(&fds);
@@ -279,21 +276,18 @@ void* SaceEvent::event_monitor_thread (void *obj) {
 }
 
 bool SaceEvent::restart_event (string eventName) {
-    bool restart = true;
+    map<string, shared_ptr<Service>>::iterator it;
 
     event_mutex.lock();
-    map<string, shared_ptr<Service>>::iterator it = events.find(eventName);
-    if (it != events.end()) {
-        if (it->second->cmd->eventFlags == SACE_EVENT_FLAG_RESTART)
-            failed_events.insert(eventName);
-        else
-            restart = false;
-    }
-    else
-        restart = false;
+    it = events.find(eventName);
     event_mutex.unlock();
 
-    return restart;
+    if (it != events.end() && it->second->cmd->eventFlags == SACE_EVENT_FLAG_RESTART) {
+        failed_events.insert(eventName);
+        return true;
+    }
+
+    return false;
 }
 
 void SaceEvent::handle_result (SaceStatusResponse &response) {
@@ -318,17 +312,23 @@ void SaceEvent::handle_result (SaceStatusResponse &response) {
         SACE_LOGI("%s Event[%s] Finished", getName(), eventName.c_str());
 
 writer:
+    vector<sp<SaceWriter>> wr;
+
     event_mutex.lock();
-    running_events.erase(eventName);
     auto wr_it = writers.find(eventName);
+
+    if (wr_it != writers.end()) {
+        for (auto e : wr_it->second)
+            wr.push_back(e);
+    }
+
+    running_events.erase(eventName);
     writers.erase(eventName);
     event_mutex.unlock();
 
-    if (wr_it == writers.end())
-        return;
-
-    for (auto e : wr_it->second)
+    for (auto e : wr) {
         e->sendResponse(response);
+    }
 }
 
 void SaceEvent::handle_result (SaceResult &result) {
@@ -599,16 +599,16 @@ bool SaceEvent::read_ini_file () {
 }
 
 static string trim_space_char (string line) {
-	size_t i = 0, j = 0;
+    size_t i = 0, j = 0;
 
-	/* skip left space */
+    /* skip left space */
     for (i = 0; i < line.size() && isspace(line[i]); i++);
     line.erase(0, i);
 
-	// skip right space
+    // skip right space
     size_t len = line.size();
-	for (i = len > 0? len -1 : 0, j = len; i > 0 && isspace(line[i]); i--, j--);
-	line.erase(j);
+    for (i = len > 0? len -1 : 0, j = len; i > 0 && isspace(line[i]); i--, j--);
+    line.erase(j);
 
     return line;
 }
@@ -853,7 +853,7 @@ bool SaceEvent::write_ini_file () const {
             conf_out.seekp(last_index, ios_base::beg);
         }
         else
-			conf_out<<endl;
+            conf_out<<endl;
     }
 
     return true;

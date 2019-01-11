@@ -83,8 +83,10 @@ class SaceEvent : public SaceExcutor, public MessageDistributable {
     };
 
     pthread_t event_monitor;
-    mutex event_mutex;
     atomic_bool running;
+
+    mutex event_mutex;
+    /* need mutex protect */
     map<string, shared_ptr<Service>> events;
     map<string, vector<sp<SaceWriter>>> writers;
     map<string, uint64_t> running_events;

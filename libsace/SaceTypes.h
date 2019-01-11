@@ -21,7 +21,7 @@
 #include <binder/Parcel.h>
 #include <utils/RefBase.h>
 
-#include "SaceServiceInfo.h"
+#include <sace/SaceServiceInfo.h>
 #include <sace/SaceParams.h>
 
 using namespace std;

@@ -21,6 +21,7 @@ LOCAL_SRC_FILES := com_android_sace_SaceService.cpp \
 	com_android_sace_SaceCommand.cpp \
 	com_android_sace_SaceManager.cpp
 
+LOCAL_CPPFLAGS += -fexceptions
 LOCAL_C_INCLUDES := $(LIB_SACE_C_INCLUDE)
 LOCAL_SHARED_LIBRARIES := liblog libcutils libutils libbinder libsace
 LOCAL_MODULE := libsace_jni

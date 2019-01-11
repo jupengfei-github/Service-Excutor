@@ -20,6 +20,5 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := sace
 LOCAL_CERTIFICATE := platform
-#include $(BUILD_JAVA_LIBRARY)
-#include $(call all-makefiles-under,$(LOCAL_PATH))
-include $(LOCAL_PATH)/jni/Android.mk
+include $(BUILD_JAVA_LIBRARY)
+include $(call all-makefiles-under,$(LOCAL_PATH))

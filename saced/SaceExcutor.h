@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 #include <SaceTypes.h>
-#include <SaceServiceInfo.h>
+#include <sace/SaceServiceInfo.h>
 #include <SaceMessage.h>
 #include <SaceLog.h>
 #include <sace/SaceParams.h>

@@ -34,7 +34,7 @@ void test_command (const char* cm) {
     cmd->close();
 }
 
-void test_service (const char *name, const char* cm) {
+void test_service (const char *name, const char* cm) noexcept {
     sp<SaceManager> manager = SaceManager::getInstance();
 
     ALOGI("runCommand %s", cm);
@@ -44,12 +44,17 @@ void test_service (const char *name, const char* cm) {
         return;
     }
 
-    sleep(5);
-    sve->pause();
-    sleep(5);
-    sve->restart();
-    sleep(5);
-    sve->stop();
+    try {
+        sleep(5);
+        sve->pause();
+        sleep(5);
+        sve->restart();
+        sleep(5);
+        sve->stop();
+    }
+    catch (RemoteException& e) {
+        ALOGI("%s", e.what());
+    }
 }
 
 void test_event (const char* name, const char* cm) {
@@ -66,12 +71,17 @@ void test_event (const char* name, const char* cm) {
         sve = manager->checkService(name);
     } while (!sve.get());
 
-    sleep(5);
-    sve->pause();
-    sleep(5);
-    sve->restart();
-    sleep(5);
-    sve->stop();
+    try {
+        sleep(5);
+        sve->pause();
+        sleep(5);
+        sve->restart();
+        sleep(5);
+        sve->stop();
+    }
+    catch (RemoteException& e) {
+        ALOGI("%s", e.what());
+    }
 }
 
 int main (void) {

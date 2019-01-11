@@ -1,6 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+LOCAL_CPPFLAGS += -fexceptions
 LIB_SACE_C_INCLUDE := $(LOCAL_PATH)/../libsace/include
 LOCAL_SRC_FILES  := test_cmd.cpp
 LOCAL_C_INCLUDES := $(LIB_SACE_C_INCLUDE)

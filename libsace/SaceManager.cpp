@@ -18,7 +18,7 @@
 #include <utils/Mutex.h>
 
 #include "sace/SaceManager.h"
-#include "SaceServiceInfo.h"
+#include <sace/SaceServiceInfo.h>
 
 #define SACE_SENDER SACE_SENDER_SOCKEET
 
@@ -76,6 +76,8 @@ SaceManager* SaceManager::getInstance () {
 }
 
 sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceCommandParams> param, bool in) {
+    sp<SaceCommandObj> cmdObj;
+
     mCmd.init();
     mCmd.type = SACE_TYPE_NORMAL;
     mCmd.normalCmdType = SACE_NORMAL_CMD_START;
@@ -90,7 +92,7 @@ sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceComm
         if (mRlt.resultType == SACE_RESULT_TYPE_FD) {
             uint64_t label;
             memcpy(&label, mRlt.resultExtra, mRlt.resultExtraLen);
-            sp<SaceCommandObj> cmdObj = new SaceCommandObj(mSender, label, cmd, mRlt.resultFd, in);
+            cmdObj = new SaceCommandObj(mSender, label, cmd, mRlt.resultFd, in);
 
             AutoMutex _lock(mMutex);
             mCommands.insert(pair<uint64_t, sp<SaceCommandObj>>(label, cmdObj));
@@ -101,7 +103,7 @@ sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceComm
     else
         SACE_LOGE("error runCommand %s", mCmd.to_string().c_str());
 
-    return nullptr;
+    return cmdObj;
 }
 
 sp<SaceServiceObj> SaceManager::queryService (const char* name) {

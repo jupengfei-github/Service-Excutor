@@ -58,10 +58,6 @@ public class SaceCommand {
         nClose(mNativePtr);
     }
 
-	public boolean isOk () {
-		return nIsOk(mNativePtr);
-	}
-
     @Override
     protected void finalize () throws Throwable {
         try {
@@ -104,7 +100,7 @@ public class SaceCommand {
     private class SaceOutputStream extends OutputStream {
 		@Override
 		public void flush () {
-			nFlush(mNativePtr);
+            throw new UnsupportedOperationException();
 		}
 
         @Override
@@ -126,8 +122,6 @@ public class SaceCommand {
 
     private native int nRead (long ptr,  byte[] buf, int off, int len);
     private native int nWrite (long ptr, byte[] buf, int off, int len);
-	private native void nFlush (long ptr);
-	private native boolean nIsOk (long ptr);
     private native void nClose (long ptr);
     private native void nDestroy (long ptr);
 }

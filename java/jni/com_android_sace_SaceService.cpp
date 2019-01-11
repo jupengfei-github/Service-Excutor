@@ -31,17 +31,53 @@ JNIEXPORT void JNICALL Java_com_android_sace_SaceService_nDestroy (JNIEnv *env _
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nStop (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
     SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
-    return sve->stop();
+    bool ret = false;
+
+    try {
+        ret = sve->stop();
+    }
+    catch (RemoteException& e) {
+        env->ThrowNew(env->FindClass("android/os/RemoteException"), e.what());
+    }
+    catch (InvalidOperation& e) {
+        env->ThrowNew(env->FindClass("android/util/AndroidRuntimeException"), e.what());
+    }
+
+    return ret;
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nPause (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
     SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
-    return sve->pause();
+    bool ret = false;
+
+    try {
+        ret = sve->pause();
+    }
+    catch (RemoteException& e) {
+        env->ThrowNew(env->FindClass("android/os/RemoteException"), e.what());
+    }
+    catch (InvalidOperation& e) {
+        env->ThrowNew(env->FindClass("android/util/AndroidRuntimeException"), e.what());
+    }
+
+    return ret;
 }
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nRestart (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
     SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
-    return sve->restart();
+    bool ret = false;
+
+    try {
+        ret = sve->restart();
+    }
+    catch (RemoteException& e) {
+        env->ThrowNew(env->FindClass("android/os/RemoteException"), e.what());
+    }
+    catch (InvalidOperation& e) {
+        env->ThrowNew(env->FindClass("android/util/AndroidRuntimeException"), e.what());
+    }
+
+    return ret;
 }
 
 JNIEXPORT jstring JNICALL Java_com_android_sace_SaceService_nGetName (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
@@ -58,7 +94,19 @@ JNIEXPORT jstring  JNICALL Java_com_android_sace_SaceService_nGetCmd (JNIEnv *en
 
 JNIEXPORT jint JNICALL Java_com_android_sace_SaceService_nGetState (JNIEnv *env __unused, jobject obj __unused, jlong ptr) {
     SaceServiceObj *sve = reinterpret_cast<SaceServiceObj*>(ptr);
-    return sve->getState();
+    jint state = SaceServiceInfo::SERVICE_UNKNOWN;
+
+    try {
+        sve->getState();
+    }
+    catch (RemoteException& e) {
+        env->ThrowNew(env->FindClass("android/os/RemoteException"), e.what());
+    }
+    catch (InvalidOperation& e) {
+        env->ThrowNew(env->FindClass("android/util/AndroidRuntimeException"), e.what());
+    }
+
+    return state;
 }
 
 #ifdef __cplusplus

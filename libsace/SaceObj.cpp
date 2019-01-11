@@ -134,7 +134,7 @@ bool SaceServiceObj::restart () throw(RemoteException) {
     return mRlt.resultStatus == SACE_RESULT_STATUS_OK;
 }
 
-enum SaceServiceInfo::ServiceState SaceServiceObj::getState() {
+enum SaceServiceInfo::ServiceState SaceServiceObj::getState() throw(RemoteException,InvalidOperation) {
     if (getError() == ERR_EXIT)
         throw RemoteException(name + " Exit Abnormally");
 

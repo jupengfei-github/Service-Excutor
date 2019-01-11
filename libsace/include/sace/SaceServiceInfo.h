@@ -51,6 +51,7 @@ public:
         SERVICE_FINISHED,           /* Service Finished By Itself */
         SERVICE_FINISHING_USER,     /* Service Finishing By User */
         SERVICE_FINISHED_USER,      /* Service Finished By User */
+        SERVICE_UNKNOWN,
     };
 
     /* Info Command */

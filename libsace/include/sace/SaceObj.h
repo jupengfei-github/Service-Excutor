@@ -25,7 +25,7 @@
 #include "../../SaceSender.h"
 #include "../../SaceTypes.h"
 #include "../../SaceLog.h"
-#include "../../SaceServiceInfo.h"
+#include "SaceServiceInfo.h"
 #include "SaceError.h"
 
 namespace android {
@@ -124,7 +124,7 @@ public:
         return command;
     }
 
-    enum SaceServiceInfo::ServiceState getState();
+    enum SaceServiceInfo::ServiceState getState() throw (RemoteException, InvalidOperation);
 };
 
 }; //namespace android

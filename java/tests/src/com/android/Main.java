@@ -50,14 +50,19 @@ public class Main {
         System.out.println("=====> run service " + cmd + " <=====");
         SaceService sve = manager.checkService(name, cmd);
 
-        wait_time(10);
-        System.out.println("pause");
-        sve.pause();
-        wait_time(20);
-        System.out.println("restart");
-        sve.restart();
-        wait_time(10);
-        System.out.println("stop");
-        sve.stop();
+        try {
+            wait_time(5);
+            System.out.println("pause");
+            sve.pause();
+            wait_time(5);
+            System.out.println("restart");
+            sve.restart();
+            wait_time(5);
+            System.out.println("stop");
+            sve.stop();
+        }
+        catch (Exception e) {
+            System.out.println("testService Exception");
+        }
     }
 }

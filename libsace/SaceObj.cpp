@@ -25,11 +25,16 @@ int SaceCommandObj::read (char* buf, int len) throw(UnsupportedOperation, Remote
     if (!in)
         throw UnsupportedOperation("only read support");
 
-    if (getError() == ERR_EXIT)
-        throw RemoteException(cmd + " Exit Abnormally");
+    string cmd_str = string("command [").append(cmd).append("] ");
+    enum ErrorCode code = getError();
+    if (code == ERR_UNKNOWN)
+        throw RemoteException(cmd_str + "May be initialize failed");
 
-    if (getError() == ERR_EXIT_USER)
-        throw InvalidOperation(cmd + " Has Exit By User");
+    if (code == ERR_EXIT)
+        throw RemoteException(cmd_str + " Exit Abnormally");
+
+    if (code == ERR_EXIT_USER)
+        throw InvalidOperation(cmd_str + " Has Exit By User");
 
     return ::read(fd, buf, len);
 }
@@ -38,18 +43,25 @@ int SaceCommandObj::write (char *buf, int len) throw(UnsupportedOperation, Remot
     if (in)
         throw UnsupportedOperation("only write support");
 
-    if (getError() == ERR_EXIT)
-        throw RemoteException(cmd + " Exit Abnormally");
+    string cmd_str = string("command [").append(cmd).append("] ");
+    enum ErrorCode code = getError();
+    if (code == ERR_UNKNOWN)
+        throw RemoteException(cmd_str + "May be initialize failed");
 
-    if (getError() == ERR_EXIT_USER)
-        throw InvalidOperation(cmd + " Has Exit By User");
+    if (code == ERR_EXIT)
+        throw RemoteException(cmd_str + "Exit Abnormally");
+
+    if (code == ERR_EXIT_USER)
+        throw InvalidOperation(cmd_str + "Has Exit By User");
 
     return ::write(fd, buf, len);
 }
 
 void SaceCommandObj::close () {
-    if (getError() == ERR_EXIT || getError() == ERR_EXIT_USER) {
-        SACE_LOGI("%s Has Closed", cmd.c_str());
+    enum ErrorCode code = getError();
+
+    if (code == ERR_EXIT || code == ERR_EXIT_USER || code == ERR_UNKNOWN) {
+        SACE_LOGI("command [%s] Has Closed", cmd.c_str());
         return;
     }
 
@@ -72,14 +84,20 @@ void SaceCommandObj::close () {
 
 // -------------------------------------------------
 bool SaceServiceObj::stop () throw(RemoteException) {
-    if (getError() == ERR_EXIT)
-        throw RemoteException(name + " Exit Abnormally");
+    enum ErrorCode code = getError();
 
-    if (getError() == ERR_EXIT_USER)
-        throw InvalidOperation(name + " Has Exit By User");
+    string sve_str = string("service [").append(name).append("] ");
+    if (code == ERR_UNKNOWN || code == ERR_NOT_EXISTS)
+        throw RemoteException(sve_str + " Not Exists Or Not Initialize");
+
+    if (code == ERR_EXIT)
+        throw RemoteException(sve_str + " Exit Abnormally");
+
+    if (code == ERR_EXIT_USER)
+        throw InvalidOperation(sve_str + " Has Exit By User");
 
     if (!label) {
-        SACE_LOGE("Service %s not Exists", name.c_str());
+        SACE_LOGE("%s not Exists", sve_str.c_str());
         return false;
     }
 
@@ -93,14 +111,20 @@ bool SaceServiceObj::stop () throw(RemoteException) {
 }
 
 bool SaceServiceObj::pause () throw(RemoteException) {
-    if (getError() == ERR_EXIT)
-        throw RemoteException(name + " Exit Abnormally");
+    enum ErrorCode code = getError();
 
-    if (getError() == ERR_EXIT_USER)
-        throw InvalidOperation(name + " Has Exit By User");
+    string sve_str = string("service [").append(name).append("] ");
+    if (code == ERR_UNKNOWN || code == ERR_NOT_EXISTS)
+        throw RemoteException(sve_str + "Not Exists Or Not Initialize");
+
+    if (code == ERR_EXIT)
+        throw RemoteException(sve_str + "Exit Abnormally");
+
+    if (code == ERR_EXIT_USER)
+        throw InvalidOperation(sve_str + "Has Exit By User");
 
     if (!label) {
-        SACE_LOGE("Service %s not Exists", name.c_str());
+        SACE_LOGE("%s not Exists", sve_str.c_str());
         return false;
     }
 
@@ -114,14 +138,20 @@ bool SaceServiceObj::pause () throw(RemoteException) {
 }
 
 bool SaceServiceObj::restart () throw(RemoteException) {
-    if (getError() == ERR_EXIT)
-        throw RemoteException(name + " Exit Abnormally");
+    enum ErrorCode code = getError();
 
-    if (getError() == ERR_EXIT_USER)
-        throw InvalidOperation(name + " Has Exit By User");
+    string sve_str = string("service [").append(name).append("] ");
+    if (code == ERR_UNKNOWN || code == ERR_NOT_EXISTS)
+        throw RemoteException(sve_str + "Not Exists Or Not Initialize");
+
+    if (code == ERR_EXIT)
+        throw RemoteException(sve_str + "Exit Abnormally");
+
+    if (code == ERR_EXIT_USER)
+        throw InvalidOperation(sve_str + "Has Exit By User");
 
     if (!label) {
-        SACE_LOGE("Service %s not Exists", name.c_str());
+        SACE_LOGE("%s not Exists", sve_str.c_str());
         return false;
     }
 

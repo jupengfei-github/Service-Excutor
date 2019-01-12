@@ -35,6 +35,7 @@ enum ErrorCode {
     ERR_TIMEOUT,
     ERR_EXIT,
     ERR_EXIT_USER,
+    ERR_NOT_EXISTS,
     ERR_UNKNOWN,
 };
 
@@ -47,6 +48,11 @@ public:
     SaceCmdObj (sp<SaceSender> obj) {
         mCmdSender = obj;
         mError = ERR_OK;
+    }
+
+    SaceCmdObj (enum ErrorCode code) {
+        mError = code;
+        mCmdSender = nullptr;
     }
 
     enum ErrorCode getError () {
@@ -82,6 +88,10 @@ public:
         this->in  = in;
     }
 
+    SaceCommandObj (enum ErrorCode code):SaceCmdObj(code) {
+        cmd = string("unknown");
+    }
+
     ~SaceCommandObj () {
         close();
     }
@@ -110,6 +120,11 @@ public:
         this->label = label;
         this->name  = string(name);
         command = string(cmd);
+    }
+
+    SaceServiceObj (enum ErrorCode code):SaceCmdObj(code) {
+        name = string("unknown");
+        command = string("unknown");
     }
 
     bool stop() throw (RemoteException);

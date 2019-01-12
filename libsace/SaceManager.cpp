@@ -76,7 +76,7 @@ SaceManager* SaceManager::getInstance () {
 }
 
 sp<SaceCommandObj> SaceManager::runCommand (const char* cmd, shared_ptr<SaceCommandParams> param, bool in) {
-    sp<SaceCommandObj> cmdObj;
+    sp<SaceCommandObj> cmdObj = new SaceCommandObj(ERR_UNKNOWN);
 
     mCmd.init();
     mCmd.type = SACE_TYPE_NORMAL;
@@ -145,6 +145,7 @@ sp<SaceServiceObj> SaceManager::queryEventService (const char* name) {
 
 sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd, shared_ptr<SaceCommandParams> param) {
     sp<SaceServiceObj> sve;
+
     if ((sve = queryService(name)).get() || (sve = queryEventService(name)).get()) {
         AutoMutex _lock(mMutex);
         mServices.insert(pair<uint64_t, sp<SaceServiceObj>>(sve->label, sve));
@@ -152,7 +153,9 @@ sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd,
     }
 
     if (!cmd)
-        return nullptr;
+        return new SaceServiceObj(ERR_NOT_EXISTS);
+    else
+        sve = new SaceServiceObj(ERR_UNKNOWN);
 
     /* start service */
     mCmd.init();
@@ -181,7 +184,7 @@ sp<SaceServiceObj> SaceManager::checkService (const char *name, const char *cmd,
     else
         SACE_LOGE("error runCommand %s", mCmd.to_string().c_str());
 
-    return nullptr;
+    return sve;
 }
 
 int SaceManager::addEvent (const char* name, const char* cmd, shared_ptr<SaceEventParams> param) {
@@ -233,7 +236,7 @@ void SaceManager::onResponse (const SaceStatusResponse &response) {
     if (response.type == SACE_RESPONSE_TYPE_SERVICE) {
         auto it = mServices.find(label);
         if (it == mServices.end()) {
-            SACE_LOGE("Service[%s] %s. But Can't Control By Us", response.name.c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
+            SACE_LOGE("Service [%s] %s. But Can't Control By Us", response.name.c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
             return;
         }
 
@@ -250,12 +253,12 @@ void SaceManager::onResponse (const SaceStatusResponse &response) {
             mCallback->handleServiceResponse(sveObj, rsp);
         }
         else
-            SACE_LOGE("Service %s %s.", response.name.c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
+            SACE_LOGE("Service [%s] %s.", response.name.c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
     }
     else if (response.type == SACE_RESPONSE_TYPE_NORMAL) {
         auto it = mCommands.find(label);
         if (it == mCommands.end()) {
-            SACE_LOGE("Command %s. But Can't Control By Us", SaceStatusResponse::mapStatusStr(response.status).c_str());
+            SACE_LOGE("Command [%s]. But Can't Control By Us", SaceStatusResponse::mapStatusStr(response.status).c_str());
             return;
         }
 
@@ -270,7 +273,7 @@ void SaceManager::onResponse (const SaceStatusResponse &response) {
             mCallback->handleCommandResponse(cmdObj, rsp);
         }
         else
-            SACE_LOGE("Command %s %s.", cmdObj->getCmd().c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
+            SACE_LOGE("Command [%s] %s.", cmdObj->getCmd().c_str(), SaceStatusResponse::mapStatusStr(response.status).c_str());
     }
 }
 
